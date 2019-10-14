@@ -20,6 +20,24 @@ then
 elif [ "$#" = "2" ]
 then
 	datafilepath=$2
+	if [ ! -f "$datafilepath" ]
+	then
+		error "busted, that file does not exist"
+		exit 1
+	fi
+elif [ "$#" = "3" ]
+then
+	datafilepath=$2
+	data2filepath=$3
+
+	if [ ! -f "$datafilepath" ] || [ ! -f "$data2filepath" ]
+	then
+		error "busted, a file does not exist"
+		exit 1
+	fi
+else
+	error "too many arguments"
+	exit 1
 fi
 
 #checking if the dang ol files exist
@@ -27,8 +45,30 @@ fi
 
 function dims()
 {
-echo 'running dims'
 
+if [ ! "$#" = "1" ]
+then
+	error "busted, wrong numner of arguments"
+	exit 1
+fi
+
+width="1"
+height="0"
+while IFS= read line 
+do
+	((height++))
+done < "$datafilepath"
+read -r line < "$datafilepath"
+for (( i=0; i<${#line}; i++  ))
+do
+	
+	if [ "${line:$i:1}" = "	" ]
+	then
+		((width++))
+	fi
+done
+
+echo "$height $width"
 return 0
 }
 
