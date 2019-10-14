@@ -1,0 +1,45 @@
+#!/bin/bash
+
+
+#method to load matrix from a file or from stdin courtesy of the hints part of the assignment page
+echo 'running fileload'
+datafilepath="datafile$$"
+if [ "$#" = "1" ]
+then
+	cat > "$datafilepath"
+elif [ "$#" = "2" ]
+then
+	datafilepath=$2
+fi
+
+#checking if the dang ol files are valid if they exist
+
+
+function dims()
+{
+echo 'running dims'
+
+return 0
+}
+
+function transpose()
+{
+echo 'running transpose'
+}
+
+function mean()
+{
+echo 'running mean'
+}
+
+function add()
+{
+echo 'running add'
+}
+
+function multiply()
+{
+echo 'running multiply'
+}
+
+$1 "${@:2}"
