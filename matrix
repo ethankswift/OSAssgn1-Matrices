@@ -1,10 +1,20 @@
 #!/bin/bash
 
 
+#function to take an error message and output it to stderr
+function error()
+{
+echo "Error - $1" >>/dev/stderr
+}
+
 #method to load matrix from a file or from stdin courtesy of the hints part of the assignment page
-echo 'running fileload'
+
 datafilepath="datafile$$"
-if [ "$#" = "1" ]
+if [ "$#" = "0" ]
+then
+	error "busted, you didn't supply any arguments"
+	exit 1
+elif [ "$#" = "1" ]
 then
 	cat > "$datafilepath"
 elif [ "$#" = "2" ]
@@ -12,7 +22,7 @@ then
 	datafilepath=$2
 fi
 
-#checking if the dang ol files are valid if they exist
+#checking if the dang ol files exist
 
 
 function dims()
