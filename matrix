@@ -7,7 +7,7 @@ function error()
 echo "Error - $1" >>/dev/stderr
 }
 
-#function to get the x,y element from a matrix
+#function to get the x,y element from a matrix, grabs the relevant line, then the relevant word from the line
 function grab()
 {
 line=$(head -$2 $3 | tail -1)
@@ -24,6 +24,7 @@ then
 	exit 1
 fi
 
+#width set to 1 because I am lazy and also bad, and counted tabs to check width
 width="1"
 height="0"
 while IFS= read line 
@@ -33,7 +34,7 @@ done < "$datafilepath"
 read -r line < "$datafilepath"
 for (( i=0; i<${#line}; i++  ))
 do
-	
+#checks to see if each sequential character is a tab	
 	if [ "${line:$i:1}" = "	" ]
 	then
 		((width++))
@@ -43,7 +44,7 @@ done
 echo "$height $width"
 }
 
-
+#this function is exactly the same as dims, but only takes file input so it can be used inside other funtions without causing conflict
 function dimshard()
 {
 
@@ -111,7 +112,7 @@ dimyx=$(dims "$datafilepath")
 #chop up the dimenstions from dims into two variables
 dimy=$(echo "$dimyx" | cut -d " " -f 1)
 dimx=$(echo "$dimyx" | cut -d " " -f 2)
-#loop through the matrix and swap around the parts
+#loop through the matrix and add up and divide the parts
 for (( i=1; i<=$dimx; i++ ))
 do
 	tmp=0
@@ -181,7 +182,7 @@ then
 	error "busted, wrong number of arguments"
 	exit 1
 fi
-#grab the dimensions of both matrices from dims
+#grab the dimensions of both matrices from dimshard
 dimyx1=$(dimshard "$datafilepath")
 dimyx2=$(dimshard "$data2filepath")
 
@@ -220,13 +221,13 @@ do
 done
 }
 
-
+#check to see if the first argument is a valid command
 if [ "$1" != "dims" ] && [ "$1" != "transpose" ] && [ "$1" != "mean" ] && [ "$1" != "add" ] && [ "$1" != "multiply" ]
 then
 	error "bad command"
 	exit 1
 fi
-
+#if the command is add or multiply, make sure file names are supplied
 if [ "$1" = "add" ] && [ "$#" != "3" ]
 then
 	error "wrong args"
@@ -255,16 +256,16 @@ then
 elif [ "$#" = "2" ]
 then
 	datafilepath=$2
-	if [ ! -f "$datafilepath" ]
+	if [[ ! -f "$datafilepath" || ! -r "$datafilepath" ]]
 	then
-		error "busted, that file does not exist"
+		error "busted, that file does not exist or is not readable"
 		exit 1
 	fi
 elif [ "$#" = "3" ]
 then
 	datafilepath=$2
 	data2filepath=$3
-	if [ ! -f "$datafilepath" ] || [ ! -f "$data2filepath" ]
+	if [[ ! -f "$datafilepath" || ! -r "$datafilepath" ]] || [[ ! -f "$data2filepath" || ! -r "$data2filepath" ]]
 
 	then
 		error "busted, a file does not exist"
@@ -275,7 +276,7 @@ else
 	exit 1
 fi
 
-#function pass courtesy of hints
+#function pass courtesy of hints on canvas
 $1 "${@:2}"
+#cleanup any created files
 rm -f datafile*
-rm -f 1
