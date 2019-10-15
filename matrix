@@ -7,8 +7,126 @@ function error()
 echo "Error - $1" >>/dev/stderr
 }
 
-#method to load matrix from a file or from stdin courtesy of the hints part of the assignment page
+#function to get the x,y element from a matrix
+function grab()
+{
+line=$(head -$2 $3 | tail -1)
+word=$(echo "$line" | cut -f $1)
+echo "$word"
+}
 
+function dims()
+{
+#checking if the right number of args have been provided (either 0 or 1)
+if [ ! "$#" > "1" ]
+then
+	error "busted, wrong number of arguments"
+	exit 1
+fi
+
+width="1"
+height="0"
+while IFS= read line 
+do
+	((height++))
+done < "$datafilepath"
+read -r line < "$datafilepath"
+for (( i=0; i<${#line}; i++  ))
+do
+	
+	if [ "${line:$i:1}" = "	" ]
+	then
+		((width++))
+	fi
+done
+
+echo "$height $width"
+return 0
+}
+
+function transpose()
+{
+#checking if the right number of args have been provided (either 0 or 1)
+if [ ! "$#" > "1" ]
+then
+	error "busted, wrong number of arguments"
+	exit 1
+fi
+#grab the dimensions from dims
+dimyx=$(dims "$datafilepath")
+
+#chop up the dimenstions from dims into two variables
+dimy=$(echo "$dimyx" | cut -d " " -f 1)
+dimx=$(echo "$dimyx" | cut -d " " -f 2)
+#loop through the matrix and swap around the parts
+for (( i=1; i<=$dimx; i++ ))
+do
+	for (( j=1; j<=$dimy; j++ ))
+	do
+		tmp=$(grab $i $j $datafilepath)
+		if [ ! "$j" = "$dimy" ]
+		then
+			printf "%s\t" "$tmp"
+		else
+			printf "%s\n" "$tmp"
+		fi
+	done
+done
+return 0
+}
+
+function mean()
+{
+#checking if the right number of args have been provided (either 0 or 1)
+if [ ! "$#" > "1" ]
+then
+	error "busted, wrong number of arguments"
+	exit 1
+fi
+#grab the dimensions from dims
+dimyx=$(dims "$datafilepath")
+
+#chop up the dimenstions from dims into two variables
+dimy=$(echo "$dimyx" | cut -d " " -f 1)
+dimx=$(echo "$dimyx" | cut -d " " -f 2)
+#loop through the matrix and swap around the parts
+for (( i=1; i<=$dimx; i++ ))
+do
+	tmp=0
+	for (( j=1; j<=$dimy; j++ ))
+	do
+		(( tmp += $(grab $i $j $datafilepath) ))
+	done
+	
+	if [ "$tmp" > 0 ]
+	then
+		tmp=$(( ($tmp + ($dimy / 2)) / $dimy ))
+	else
+		tmp=$(( ($tmp + (-$dimy / 2)) / $dimy ))
+	fi
+	if [ ! "$i" = "$dimx" ]
+		then
+			printf "%s\t" "$tmp"
+		else
+			printf "%s\n" "$tmp"
+	fi
+
+done
+return 0
+}
+
+function add()
+{
+echo 'running add'
+}
+
+function multiply()
+{
+echo 'running multiply'
+}
+
+#method to load matrix from a file or from stdin courtesy of the hints part of the assignment page
+#also checking if the files that are provided via command prompt acutally exist
 datafilepath="datafile$$"
 if [ "$#" = "0" ]
 then
@@ -40,56 +158,8 @@ else
 	exit 1
 fi
 
-#checking if the dang ol files exist
 
-
-function dims()
-{
-
-if [ ! "$#" = "1" ]
-then
-	error "busted, wrong numner of arguments"
-	exit 1
-fi
-
-width="1"
-height="0"
-while IFS= read line 
-do
-	((height++))
-done < "$datafilepath"
-read -r line < "$datafilepath"
-for (( i=0; i<${#line}; i++  ))
-do
-	
-	if [ "${line:$i:1}" = "	" ]
-	then
-		((width++))
-	fi
-done
-
-echo "$height $width"
-return 0
-}
-
-function transpose()
-{
-echo 'running transpose'
-}
-
-function mean()
-{
-echo 'running mean'
-}
-
-function add()
-{
-echo 'running add'
-}
-
-function multiply()
-{
-echo 'running multiply'
-}
-
+#function pass courtesy of hints
 $1 "${@:2}"
+rm -f datafile*
+rm -f 1
