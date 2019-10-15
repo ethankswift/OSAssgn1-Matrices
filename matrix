@@ -18,7 +18,7 @@ echo "$word"
 function dims()
 {
 #checking if the right number of args have been provided (either 0 or 1)
-if [ ! "$#" > "1" ]
+if [ "$#" != "1" ] && [ "$#" != "0" ]
 then
 	error "busted, wrong number of arguments"
 	exit 1
@@ -41,13 +41,36 @@ do
 done
 
 echo "$height $width"
-return 0
 }
+
+
+function dimshard()
+{
+
+width="1"
+height="0"
+while IFS= read line 
+do
+	((height++))
+done < "$1"
+read -r line < "$1"
+for (( i=0; i<${#line}; i++  ))
+do
+	
+	if [ "${line:$i:1}" = "	" ]
+	then
+		((width++))
+	fi
+done
+
+echo "$height $width"
+}
+
 
 function transpose()
 {
 #checking if the right number of args have been provided (either 0 or 1)
-if [ ! "$#" > "1" ]
+if [ "$#" -ne "1" ] && [ "$#" -ne "0" ]
 then
 	error "busted, wrong number of arguments"
 	exit 1
@@ -72,7 +95,6 @@ do
 		fi
 	done
 done
-return 0
 }
 
 function mean()
@@ -97,13 +119,7 @@ do
 	do
 		(( tmp += $(grab $i $j $datafilepath) ))
 	done
-	
-	if [ "$tmp" > 0 ]
-	then
-		tmp=$(( ($tmp + ($dimy / 2)) / $dimy ))
-	else
-		tmp=$(( ($tmp + (-$dimy / 2)) / $dimy ))
-	fi
+		tmp=$(( ($tmp + ($dimy / 2)*( ($tmp > 0 )*2 - 1 )) / $dimy ))
 	if [ ! "$i" = "$dimx" ]
 		then
 			printf "%s\t" "$tmp"
@@ -112,22 +128,123 @@ do
 	fi
 
 done
-return 0
 }
 
 function add()
 {
-echo 'running add'
+#checking if the right number of args have been provided (2)
+if [  "$#" != "2" ]
+then
+	error "busted, wrong number of arguments"
+	exit 1
+fi
+#grab the dimensions of both matrices from dims
+dimyx1=$(dimshard "$datafilepath")
+dimyx2=$(dimshard "$data2filepath")
+
+#chop up the dimenstions from dims into two variables
+dimy1=$(echo "$dimyx1" | cut -d " " -f 1)
+dimx1=$(echo "$dimyx1" | cut -d " " -f 2)
+
+dimy2=$(echo "$dimyx2" | cut -d " " -f 1)
+dimx2=$(echo "$dimyx2" | cut -d " " -f 2)
+if [  "$dimx1" != "$dimx2" ] || [  "$dimy1" != "$dimy2" ]
+then
+	error "these can't be added"
+	exit 1
+fi
+
+#loop through the matrix and add the parts
+for (( i=1; i<=$dimy1; i++ ))
+do
+	for (( j=1; j<=$dimx1; j++ ))
+	do
+		tmp1=$(grab $j $i $datafilepath)
+		tmp2=$(grab $j $i $data2filepath)
+		tmp=$(( tmp1 + tmp2 ))
+		if [ ! "$j" = "$dimx1" ]
+		then
+			printf "%s\t" "$tmp"
+		else
+			printf "%s\n" "$tmp"
+		fi
+	done
+	
+done
 }
 
 function multiply()
 {
-echo 'running multiply'
+#checking if the right number of args have been provided (2)
+if [  "$#" != "2" ]
+then
+	error "busted, wrong number of arguments"
+	exit 1
+fi
+#grab the dimensions of both matrices from dims
+dimyx1=$(dimshard "$datafilepath")
+dimyx2=$(dimshard "$data2filepath")
+
+#chop up the dimenstions from dims into two variables
+dimy1=$(echo "$dimyx1" | cut -d " " -f 1)
+dimx1=$(echo "$dimyx1" | cut -d " " -f 2)
+
+dimy2=$(echo "$dimyx2" | cut -d " " -f 1)
+dimx2=$(echo "$dimyx2" | cut -d " " -f 2)
+if [  "$dimx1" != "$dimy2" ]
+then
+	error "these can't be multiplied"
+	exit 1
+fi
+
+#loop through the matrix and multiply the parts
+for (( i=1; i<=$dimy1; i++ ))
+do
+	for (( j=1; j<=$dimx2; j++ ))
+	do
+	tmp=0
+		for (( k=1; k<=$dimx1; k++ ))
+		do
+			tmp1=$(grab $k $i $datafilepath)
+			tmp2=$(grab $j $k $data2filepath)
+			(( tmp+= (tmp1*tmp2) ))
+		done
+		if [ ! "$j" = "$dimx2" ]
+		then
+			printf "%s\t" "$tmp"
+		else
+			printf "%s\n" "$tmp"
+		fi
+	done
+	
+done
 }
+
+
+if [ "$1" != "dims" ] && [ "$1" != "transpose" ] && [ "$1" != "mean" ] && [ "$1" != "add" ] && [ "$1" != "multiply" ]
+then
+	error "bad command"
+	exit 1
+fi
+
+if [ "$1" = "add" ] && [ "$#" != "3" ]
+then
+	error "wrong args"
+	exit 1
+fi
+
+if [ "$1" = "multiply" ] && [ "$#" != "3" ]
+then
+	error "wrong args"
+	exit 1
+fi
+
+
 
 #method to load matrix from a file or from stdin courtesy of the hints part of the assignment page
 #also checking if the files that are provided via command prompt acutally exist
 datafilepath="datafile$$"
+data2filepath="data2file$$"
 if [ "$#" = "0" ]
 then
 	error "busted, you didn't supply any arguments"
@@ -147,8 +264,8 @@ elif [ "$#" = "3" ]
 then
 	datafilepath=$2
 	data2filepath=$3
-
 	if [ ! -f "$datafilepath" ] || [ ! -f "$data2filepath" ]
+
 	then
 		error "busted, a file does not exist"
 		exit 1
@@ -157,7 +274,6 @@ else
 	error "too many arguments"
 	exit 1
 fi
-
 
 #function pass courtesy of hints
 $1 "${@:2}"
